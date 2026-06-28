@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PK XD Portal — Конструктор правил</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --white: #ffffff;
+      --muted: rgba(255,255,255,0.78);
+      --line: rgba(255,255,255,0.18);
+      --panel-top: rgba(80, 205, 255, 0.35);
+      --panel-bottom: rgba(35, 75, 185, 0.42);
+      --main-top: rgba(105, 225, 255, 0.28);
+      --main-bottom: rgba(35, 60, 170, 0.42);
+      --shadow: 0 24px 80px rgba(0,0,0,0.30);
+      --soft-shadow: 0 14px 40px rgba(0,0,0,0.20);
+      --text-shadow: 0 3px 14px rgba(0,0,0,0.25);
+      --ui-bg: rgba(255,255,255,0.12);
+      --ui-hover: rgba(255,255,255,0.20);
+      --ui-border: rgba(255,255,255,0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Inter, Arial, sans-serif;
+      background: #07142d;
+      color: var(--white);
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: 330px minmax(320px, 1fr);
+      gap: 16px;
+      padding: 16px;
+      align-items: start;
+      overflow-x: auto;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 16px;
+      z-index: 10000;
+      min-width: 310px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+    }
+
+    .sidebar h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      line-height: 1.05;
+      font-weight: 1000;
+    }
+
+    .sidebar p {
+      margin: 0 0 14px;
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .group {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .group:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .group-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .btn,
+    .file-label,
+    input[type="text"],
+    input[type="color"],
+    textarea,
+    select {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 11px 13px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .btn,
+    .file-label {
+      cursor: pointer;
+      color: #fff;
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      transition: .18s ease;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      user-select: none;
+    }
+
+    .btn:hover,
+    .file-label:hover {
+      background: var(--ui-hover);
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, rgba(57,223,255,.54), rgba(18,130,255,.38));
+      border-color: rgba(112,233,255,.35);
+    }
+
+    .btn.active {
+      background: linear-gradient(180deg, rgba(255,235,59,.42), rgba(255,215,0,.24));
+      border-color: rgba(255,255,255,.28);
+    }
+
+    input[type="file"] { display: none; }
+
+    input[type="text"],
+    textarea,
+    select {
+      color: #fff;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.12);
+      outline: none;
+    }
+
+    input[type="color"] {
+      height: 44px;
+      padding: 6px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .hint,
+    .status {
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(255,255,255,.74);
+    }
+
+    .status {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.10);
+      min-height: 40px;
+      color: rgba(255,255,255,.92);
+    }
+
+    .workspace {
+      display: grid;
+      gap: 12px;
+      justify-items: start;
+      min-width: 0;
+    }
+
+    .canvas-wrap {
+      width: fit-content;
+      padding: 10px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow: auto;
+      max-width: calc(100vw - 380px);
+    }
+
+    .poster {
+      position: relative;
+      width: 1280px;
+      min-height: 720px;
+      overflow: hidden;
+      border-radius: 40px;
+      isolation: isolate;
+      padding: 22px 28px 24px;
+      background: linear-gradient(rgba(6,16,38,0.20), rgba(6,16,38,0.34));
+      box-shadow: 0 30px 100px rgba(0,0,0,0.34);
+    }
+
+    .bg-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -30;
+      display: none;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .bg-fallback {
+      position: absolute;
+      inset: 0;
+      z-index: -40;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(255,255,255,0.10), transparent 18%),
+        radial-gradient(circle at 82% 10%, rgba(160,250,255,0.08), transparent 18%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent 24%),
+        radial-gradient(circle at 50% 100%, rgba(255,255,180,0.08), transparent 26%),
+        linear-gradient(135deg, #10245d 0%, #24107e 55%, #0d4e8d 100%);
+    }
+
+    .poster::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 100%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .overlay-back,
+    .overlay-front {
+      position: absolute;
+      inset: 0;
+      pointer-events: auto;
+    }
+
+    .overlay-back { z-index: 4; }
+    .content-layer { position: relative; z-index: 5; pointer-events: none; }
+    .overlay-front { z-index: 20; }
+
+    body.back-edit-mode .content-layer {
+      pointer-events: none;
+    }
+
+    body.back-edit-mode .main-card,
+    body.back-edit-mode .main-card * {
+      pointer-events: none !important;
+    }
+
+    .top {
+      pointer-events: none;
+      text-align: center;
+      padding: 0 18px 12px;
+    }
+
+    .main-card {
+      pointer-events: auto;
+      max-width: 1160px;
+      margin: 4px auto 0;
+      border-radius: 36px;
+      padding: 18px;
+      background: linear-gradient(180deg, var(--main-top), var(--main-bottom));
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .main-card * {
+      pointer-events: auto;
+    }
+
+    .main-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.07), transparent 20%),
+        radial-gradient(circle at 50% 12%, rgba(255,255,255,0.05), transparent 22%);
+      pointer-events: none;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 70px;
+      line-height: .95;
+      font-weight: 1000;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--white);
+      text-shadow: 0 5px 22px rgba(0,0,0,.28);
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--muted);
+      text-shadow: var(--text-shadow);
+    }
+
+    .rules-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .rule-window {
+      cursor: pointer;
+      position: relative;
+      border-radius: 28px;
+      padding: 13px;
+      background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+      border: 1px solid var(--line);
+      box-shadow: var(--soft-shadow);
+      overflow: hidden;
+      min-height: 100px;
+    }
+
+    .rule-window::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06), transparent 24%),
+        radial-gradient(circle at 14% 0%, rgba(170,240,255,0.12), transparent 28%);
+      pointer-events: none;
+    }
+
+    .rule-window.selected-window {
+      outline: 3px solid rgba(255,255,255,.65);
+      outline-offset: 4px;
+    }
+
+    .rule-window.important {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, rgba(110,225,255,.34), rgba(45,85,210,.44));
+    }
+
+    .window-head {
+      position: relative;
+      z-index: 1;
+      border-radius: 20px;
+      padding: 12px 16px;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 28px;
+      line-height: .95;
+      font-weight: 1000;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: var(--text-shadow);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(10px);
+      margin-bottom: 12px;
+      background: linear-gradient(180deg, rgba(80,205,255,.25), rgba(35,75,185,.28));
+    }
+
+    .rule-list {
+      position: relative;
+      z-index: 1;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 7px;
+    }
+
+    .rule-list li {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 4px 0 6px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    .rule-list li:last-child { border-bottom: none; }
+
+    .arrow {
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 1000;
+      color: #fff;
+      text-shadow: var(--text-shadow);
+      transform: translateY(2px);
+    }
+
+    .rule-text {
+      font-size: 24px;
+      line-height: 1.05;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: var(--text-shadow);
+      white-space: pre-wrap;
+    }
+
+    .vibe {
+      position: relative;
+      z-index: 2;
+      margin-top: 14px;
+      border-radius: 26px;
+      padding: 15px 18px;
+      text-align: center;
+      font-size: 30px;
+      line-height: 1.05;
+      font-weight: 1000;
+      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: var(--soft-shadow);
+      text-shadow: var(--text-shadow);
+    }
+
+    .small-link {
+      position: relative;
+      z-index: 2;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+      color: rgba(255,255,255,.80);
+      text-shadow: var(--text-shadow);
+    }
+
+    .overlay-item {
+      position: absolute;
+      left: 50px;
+      top: 50px;
+      width: 140px;
+      transform-origin: center center;
+      cursor: grab;
+      pointer-events: auto;
+      user-select: none;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.30));
+      z-index: 1;
+      touch-action: none;
+    }
+
+    .overlay-item.dragging {
+      cursor: grabbing;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,.36));
+    }
+
+    .overlay-item.selected {
+      outline: 2px dashed rgba(255,255,255,.70);
+      outline-offset: 4px;
+    }
+
+    .overlay-item img {
+      display: block;
+      width: 100%;
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .item-menu {
+      position: absolute;
+      right: -10px;
+      top: -10px;
+      z-index: 30;
+    }
+
+    .item-menu-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(7,17,46,.86);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .overlay-item.selected .item-menu-btn { display: flex; }
+
+    .item-menu-panel {
+      position: absolute;
+      top: 40px;
+      right: 0;
+      min-width: 132px;
+      border-radius: 14px;
+      background: rgba(9,20,56,.96);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 12px 28px rgba(0,0,0,.22);
+      padding: 6px;
+      display: none;
+      gap: 4px;
+    }
+
+    .item-menu.open .item-menu-panel { display: grid; }
+
+    .item-action {
+      border: none;
+      background: rgba(255,255,255,.06);
+      color: #fff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .item-action:hover { background: rgba(255,255,255,.12); }
+
+    .window-editor {
+      display: grid;
+      gap: 8px;
+      max-height: 280px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .window-editor-item {
+      display: grid;
+      grid-template-columns: 1fr 34px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .window-editor-item button {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,.10);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        display: grid;
+        grid-template-columns: 1fr;
+        padding: 10px;
+        gap: 10px;
+        overflow-x: hidden;
+      }
+
+      .sidebar {
+        position: relative;
+        top: 0;
+        min-width: 0;
+        width: 100%;
+        max-height: none;
+      }
+
+      .workspace {
+        width: 100%;
+      }
+
+      .canvas-wrap {
+        width: 100%;
+        max-width: 100%;
+        overflow: auto;
+      }
+
+      .poster {
+        width: 1280px;
+        min-height: 720px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <aside class="sidebar">
+    <h1>Конструктор правил</h1>
+    <p>На ПК кликай по окну на картинке. На телефоне можно выбрать окно через список ниже.</p>
+
+    <div class="group">
+      <div class="group-title">База</div>
+      <input id="titleInput" type="text" value="Правила PK XD Portal" />
+      <input id="subtitleInput" type="text" value="Чат должен оставаться безопасным, понятным и приятным для всех участников" />
+      <input id="vibeInput" type="text" value="🤩 Поддерживай вайб — и портал станет домом 🌀" />
+      <div class="row-2">
+        <label class="file-label" for="bgInput">Фон</label>
+        <label class="file-label" for="templateInput">Шаблон</label>
+      </div>
+      <input id="bgInput" type="file" accept="image/*" />
+      <input id="templateInput" type="file" accept=".json,application/json" />
+    </div>
+
+    <div class="group">
+      <div class="group-title">Окна</div>
+      <select id="windowSelect"></select>
+      <button id="addWindowBtn" class="btn primary">Добавить окно</button>
+      <button id="deleteWindowBtn" class="btn">Удалить выбранное окно</button>
+      <div class="row-2">
+        <button id="moveWindowUpBtn" class="btn">Окно ↑</button>
+        <button id="moveWindowDownBtn" class="btn">Окно ↓</button>
+      </div>
+      <input id="windowTitleInput" type="text" placeholder="Заголовок окна" />
+      <input id="windowColorInput" type="color" value="#ff3b30" />
+      <button id="applyWindowBtn" class="btn">Применить к окну</button>
+      <button id="addPointBtn" class="btn">Добавить пункт</button>
+      <div id="windowEditor" class="window-editor"></div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Объекты</div>
+      <label class="file-label" for="objInput">Добавить объект</label>
+      <input id="objInput" type="file" accept="image/*" multiple />
+      <div class="row-2">
+        <button id="toBackBtn" class="btn">За блоки</button>
+        <button id="toFrontBtn" class="btn">Поверх</button>
+      </div>
+      <button id="deleteObjBtn" class="btn">Удалить объект</button>
+      <button id="backEditBtn" class="btn">Режим задних объектов</button>
+      <div class="hint">Колесо — масштаб. Shift + колесо — поворот. Если объект за блоками не берётся — включи режим задних объектов.</div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Сохранение</div>
+      <div class="row-2">
+        <button id="undoBtn" class="btn">Назад</button>
+        <button id="saveTemplateBtn" class="btn">Сохранить шаблон</button>
+      </div>
+      <button id="savePngBtn" class="btn primary">Сохранить PNG</button>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Статус</div>
+      <div id="status" class="status">Готово.</div>
+    </div>
+  </aside>
+
+  <section class="workspace">
+    <div class="canvas-wrap">
+      <main id="poster" class="poster">
+        <img id="bgImage" class="bg-image" alt="" />
+        <div class="bg-fallback"></div>
+
+        <div id="overlayBack" class="overlay-back"></div>
+
+        <div class="content-layer">
+          <header class="top">
+            <h1 id="posterTitle" class="title">Правила PK XD Portal</h1>
+            <p id="posterSubtitle" class="subtitle">Чат должен оставаться безопасным, понятным и приятным для всех участников</p>
+          </header>
+
+          <section class="main-card">
+            <div id="rulesGrid" class="rules-grid"></div>
+            <div id="posterVibe" class="vibe">🤩 Поддерживай вайб — и портал станет домом 🌀</div>
+            <div class="small-link">t.me/pkxdportal</div>
+          </section>
+        </div>
+
+        <div id="overlayFront" class="overlay-front"></div>
+      </main>
+    </div>
+  </section>
+
+<script>
+const DEFAULT_STATE = {
+  version: 11,
+  title: "Правила PK XD Portal",
+  subtitle: "Чат должен оставаться безопасным, понятным и приятным для всех участников",
+  vibe: "🤩 Поддерживай вайб — и портал станет домом 🌀",
+  bgImage: null,
+  windows: [
+    {
+      title: "🔴 Мут 1 час",
+      color: "#ffeb3b",
+      important: false,
+      items: [
+        "Мат (под спойлером — можно)",
+        "Спам (3+ одинаковых сообщений подряд или 20+ эмодзи)",
+        "Оффтоп (сообщения не по теме чата)",
+        "Флуд GIF / стикерами / голосовыми"
+      ]
+    },
+    {
+      title: "🔴 Варн ➤ Бан",
+      color: "#ff3b30",
+      important: false,
+      items: [
+        "Оскорбления / токсичность",
+        "Провокации и конфликты",
+        "Пиар / реклама / ссылки",
+        "Шипперство",
+        "Политика / религия / расизм",
+        "Неприятный или провокационный контент",
+        "Обход наказания или повторные нарушения"
+      ]
+    },
+    {
+      title: "🔴 Бан навсегда",
+      color: "#ff0000",
+      important: false,
+      items: [
+        "Слив личных данных",
+        "18+ контент (любой формат: текст, фото, ник, аватар)",
+        "Скам / обман",
+        "Пожелания смерти / серьёзные угрозы",
+        "Вредоносные ссылки или рейд"
+      ]
+    },
+    {
+      title: "❤️ Важно",
+      color: "#ffffff",
+      important: true,
+      items: [
+        "3 варна = бан",
+        "Думай перед отправкой сообщения",
+        "Незнание правил не освобождает от ответственности.",
+        "Снять варн / бан можно в магазине портала: https://t.me/pkxdportal/"
+      ]
+    }
+  ],
+  overlayItems: []
+};
+
+let state = structuredClone(DEFAULT_STATE);
+let selectedWindow = 0;
+let selectedItem = null;
+const historyStack = [];
+
+const poster = document.getElementById("poster");
+const rulesGrid = document.getElementById("rulesGrid");
+const posterTitle = document.getElementById("posterTitle");
+const posterSubtitle = document.getElementById("posterSubtitle");
+const posterVibe = document.getElementById("posterVibe");
+const bgImage = document.getElementById("bgImage");
+const overlayBack = document.getElementById("overlayBack");
+const overlayFront = document.getElementById("overlayFront");
+const statusBox = document.getElementById("status");
+
+const titleInput = document.getElementById("titleInput");
+const subtitleInput = document.getElementById("subtitleInput");
+const vibeInput = document.getElementById("vibeInput");
+const bgInput = document.getElementById("bgInput");
+const templateInput = document.getElementById("templateInput");
+const objInput = document.getElementById("objInput");
+const windowTitleInput = document.getElementById("windowTitleInput");
+const windowColorInput = document.getElementById("windowColorInput");
+const windowEditor = document.getElementById("windowEditor");
+const windowSelect = document.getElementById("windowSelect");
+const backEditBtn = document.getElementById("backEditBtn");
+
+function setStatus(text) {
+  statusBox.textContent = text;
+}
+
+function saveHistory() {
+  historyStack.push(JSON.stringify(getCurrentTemplate()));
+  if (historyStack.length > 80) historyStack.shift();
+}
+
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(clean, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function render() {
+  posterTitle.textContent = state.title;
+  posterSubtitle.textContent = state.subtitle;
+  posterVibe.textContent = state.vibe;
+
+  titleInput.value = state.title;
+  subtitleInput.value = state.subtitle;
+  vibeInput.value = state.vibe;
+
+  if (state.bgImage) {
+    bgImage.src = state.bgImage;
+    bgImage.style.display = "block";
+  } else {
+    bgImage.src = "";
+    bgImage.style.display = "none";
+  }
+
+  rulesGrid.innerHTML = "";
+
+  state.windows.forEach((win, index) => {
+    const card = document.createElement("section");
+    card.className = "rule-window" + (win.important ? " important" : "") + (index === selectedWindow ? " selected-window" : "");
+    card.dataset.index = index;
+
+    const head = document.createElement("div");
+    head.className = "window-head";
+    head.textContent = win.title;
+    head.style.background = `linear-gradient(180deg, ${hexToRgba(win.color, 0.62)}, ${hexToRgba(win.color, 0.42)})`;
+
+    const list = document.createElement("ul");
+    list.className = "rule-list";
+
+    win.items.forEach(text => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="arrow">➤</span><span class="rule-text"></span>`;
+      li.querySelector(".rule-text").textContent = text;
+      list.appendChild(li);
+    });
+
+    card.appendChild(head);
+    card.appendChild(list);
+
+    card.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectedWindow = index;
+      render();
+      setStatus("Окно выбрано.");
+    });
+
+    rulesGrid.appendChild(card);
+  });
+
+  renderWindowSelect();
+  renderWindowEditor();
+}
+
+function renderWindowSelect() {
+  windowSelect.innerHTML = "";
+  state.windows.forEach((win, index) => {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = `${index + 1}. ${win.title}`;
+    windowSelect.appendChild(option);
+  });
+  windowSelect.value = String(selectedWindow);
+}
+
+function renderWindowEditor() {
+  const win = state.windows[selectedWindow];
+  if (!win) return;
+
+  windowTitleInput.value = win.title;
+  windowColorInput.value = win.color;
+  windowEditor.innerHTML = "";
+
+  win.items.forEach((text, index) => {
+    const row = document.createElement("div");
+    row.className = "window-editor-item";
+
+    const input = document.createElement("textarea");
+    input.rows = 2;
+    input.value = text;
+    input.addEventListener("input", () => {
+      win.items[index] = input.value;
+      render();
+    });
+
+    const del = document.createElement("button");
+    del.textContent = "×";
+    del.addEventListener("click", () => {
+      saveHistory();
+      win.items.splice(index, 1);
+      render();
+    });
+
+    row.appendChild(input);
+    row.appendChild(del);
+    windowEditor.appendChild(row);
+  });
+}
+
+function getCurrentTemplate() {
+  state.overlayItems = Array.from(document.querySelectorAll(".overlay-item")).map(item => {
+    const img = item.querySelector("img");
+    return {
+      src: img?.src || "",
+      left: parseFloat(item.style.left || "0"),
+      top: parseFloat(item.style.top || "0"),
+      width: parseFloat(item.style.width || "140"),
+      scale: parseFloat(item.dataset.scale || "1"),
+      rotate: parseFloat(item.dataset.rotate || "0"),
+      layer: item.dataset.layer || "front"
+    };
+  });
+  return structuredClone(state);
+}
+
+function restoreTemplate(data) {
+  state = structuredClone(data);
+  if (!Array.isArray(state.windows)) state.windows = structuredClone(DEFAULT_STATE.windows);
+  if (!Array.isArray(state.overlayItems)) state.overlayItems = [];
+
+  selectedWindow = Math.min(selectedWindow, state.windows.length - 1);
+  overlayBack.innerHTML = "";
+  overlayFront.innerHTML = "";
+  selectedItem = null;
+
+  render();
+
+  state.overlayItems.forEach((obj, i) => createOverlayItem(obj.src, i, obj, false));
+}
+
+function setSelectedItem(item) {
+  document.querySelectorAll(".overlay-item.selected").forEach(el => el.classList.remove("selected"));
+  document.querySelectorAll(".item-menu").forEach(el => el.classList.remove("open"));
+  selectedItem = item;
+  if (item) item.classList.add("selected");
+}
+
+function applyTransform(item) {
+  item.style.transform = `scale(${item.dataset.scale || 1}) rotate(${item.dataset.rotate || 0}deg)`;
+}
+
+function getPosterRelativePoint(clientX, clientY) {
+  const rect = poster.getBoundingClientRect();
+  const scaleX = poster.offsetWidth / rect.width;
+  const scaleY = poster.offsetHeight / rect.height;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY
+  };
+}
+
+function createMenu(item) {
+  const menu = document.createElement("div");
+  menu.className = "item-menu";
+
+  const btn = document.createElement("button");
+  btn.className = "item-menu-btn";
+  btn.type = "button";
+  btn.textContent = "⋯";
+
+  const panel = document.createElement("div");
+  panel.className = "item-menu-panel";
+
+  [
+    ["Удалить", () => deleteObject(item)],
+    ["За блоки", () => moveObject(item, "back")],
+    ["Поверх", () => moveObject(item, "front")]
+  ].forEach(([label, action]) => {
+    const a = document.createElement("button");
+    a.className = "item-action";
+    a.type = "button";
+    a.textContent = label;
+    a.addEventListener("click", e => {
+      e.stopPropagation();
+      action();
+      menu.classList.remove("open");
+    });
+    panel.appendChild(a);
+  });
+
+  btn.addEventListener("click", e => {
+    e.stopPropagation();
+    setSelectedItem(item);
+    menu.classList.toggle("open");
+  });
+
+  menu.appendChild(btn);
+  menu.appendChild(panel);
+  return menu;
+}
+
+function createOverlayItem(src, index = 0, saved = null, pushHistory = true) {
+  if (pushHistory) saveHistory();
+
+  const item = document.createElement("div");
+  item.className = "overlay-item";
+  item.dataset.scale = saved?.scale ?? "1";
+  item.dataset.rotate = saved?.rotate ?? "0";
+  item.dataset.layer = saved?.layer ?? "front";
+  item.style.left = (saved?.left ?? (90 + index * 24)) + "px";
+  item.style.top = (saved?.top ?? (90 + index * 24)) + "px";
+  item.style.width = (saved?.width ?? 160) + "px";
+
+  const img = document.createElement("img");
+  img.src = src;
+  item.appendChild(img);
+  item.appendChild(createMenu(item));
+
+  (item.dataset.layer === "back" ? overlayBack : overlayFront).appendChild(item);
+
+  applyTransform(item);
+  enableObject(item);
+  setSelectedItem(item);
+}
+
+function enableObject(item) {
+  let activePointerId = null;
+  let startPointer = { x: 0, y: 0 };
+  let startPos = { left: 0, top: 0 };
+  let moved = false;
+
+  item.addEventListener("pointerdown", e => {
+    if (e.target.closest(".item-menu")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    activePointerId = e.pointerId;
+    item.setPointerCapture(activePointerId);
+    item.classList.add("dragging");
+    setSelectedItem(item);
+    moved = false;
+    startPointer = getPosterRelativePoint(e.clientX, e.clientY);
+    startPos = {
+      left: parseFloat(item.style.left || "0"),
+      top: parseFloat(item.style.top || "0")
+    };
+  });
+
+  item.addEventListener("pointermove", e => {
+    if (activePointerId !== e.pointerId) return;
+    const p = getPosterRelativePoint(e.clientX, e.clientY);
+    const dx = p.x - startPointer.x;
+    const dy = p.y - startPointer.y;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+    item.style.left = (startPos.left + dx) + "px";
+    item.style.top = (startPos.top + dy) + "px";
+  });
+
+  function finish(e) {
+    if (activePointerId !== e.pointerId) return;
+    item.releasePointerCapture(activePointerId);
+    activePointerId = null;
+    item.classList.remove("dragging");
+    if (moved) saveHistory();
+  }
+
+  item.addEventListener("pointerup", finish);
+  item.addEventListener("pointercancel", finish);
+
+  item.addEventListener("wheel", e => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedItem(item);
+    saveHistory();
+
+    if (e.shiftKey) {
+      let rotate = parseFloat(item.dataset.rotate || "0");
+      rotate += e.deltaY < 0 ? 5 : -5;
+      item.dataset.rotate = String(rotate);
+    } else {
+      let scale = parseFloat(item.dataset.scale || "1");
+      scale += e.deltaY < 0 ? 0.08 : -0.08;
+      scale = Math.max(0.15, Math.min(6, scale));
+      item.dataset.scale = String(scale);
+    }
+
+    applyTransform(item);
+  }, { passive: false });
+
+  item.addEventListener("dblclick", e => {
+    e.stopPropagation();
+    deleteObject(item);
+  });
+}
+
+function moveObject(item, layer) {
+  if (!item) return;
+  saveHistory();
+  item.dataset.layer = layer;
+  (layer === "back" ? overlayBack : overlayFront).appendChild(item);
+  setSelectedItem(item);
+}
+
+function deleteObject(item) {
+  if (!item) return;
+  saveHistory();
+  if (selectedItem === item) selectedItem = null;
+  item.remove();
+}
+
+titleInput.addEventListener("input", () => {
+  state.title = titleInput.value;
+  render();
+});
+
+subtitleInput.addEventListener("input", () => {
+  state.subtitle = subtitleInput.value;
+  render();
+});
+
+vibeInput.addEventListener("input", () => {
+  state.vibe = vibeInput.value;
+  render();
+});
+
+windowSelect.addEventListener("change", () => {
+  selectedWindow = Number(windowSelect.value);
+  render();
+});
+
+document.getElementById("addWindowBtn").addEventListener("click", () => {
+  saveHistory();
+  state.windows.push({
+    title: "Новое окно",
+    color: "#1edbff",
+    important: false,
+    items: ["Новый пункт"]
+  });
+  selectedWindow = state.windows.length - 1;
+  render();
+});
+
+document.getElementById("deleteWindowBtn").addEventListener("click", () => {
+  if (state.windows.length <= 1) return;
+  saveHistory();
+  state.windows.splice(selectedWindow, 1);
+  selectedWindow = Math.max(0, selectedWindow - 1);
+  render();
+});
+
+document.getElementById("moveWindowUpBtn").addEventListener("click", () => {
+  if (selectedWindow <= 0) return;
+  saveHistory();
+  [state.windows[selectedWindow - 1], state.windows[selectedWindow]] = [state.windows[selectedWindow], state.windows[selectedWindow - 1]];
+  selectedWindow--;
+  render();
+});
+
+document.getElementById("moveWindowDownBtn").addEventListener("click", () => {
+  if (selectedWindow >= state.windows.length - 1) return;
+  saveHistory();
+  [state.windows[selectedWindow + 1], state.windows[selectedWindow]] = [state.windows[selectedWindow], state.windows[selectedWindow + 1]];
+  selectedWindow++;
+  render();
+});
+
+document.getElementById("applyWindowBtn").addEventListener("click", () => {
+  const win = state.windows[selectedWindow];
+  if (!win) return;
+  saveHistory();
+  win.title = windowTitleInput.value;
+  win.color = windowColorInput.value;
+  win.important = win.title.toLowerCase().includes("важно");
+  render();
+});
+
+document.getElementById("addPointBtn").addEventListener("click", () => {
+  const win = state.windows[selectedWindow];
+  if (!win) return;
+  saveHistory();
+  win.items.push("Новый пункт");
+  render();
+});
+
+bgInput.addEventListener("change", async () => {
+  const file = bgInput.files?.[0];
+  if (!file) return;
+  saveHistory();
+  state.bgImage = await readFileAsDataURL(file);
+  render();
+  bgInput.value = "";
+});
+
+objInput.addEventListener("change", () => {
+  const files = Array.from(objInput.files || []);
+  files.forEach((file, i) => {
+    const r = new FileReader();
+    r.onload = e => createOverlayItem(e.target.result, i, null, true);
+    r.readAsDataURL(file);
+  });
+  objInput.value = "";
+});
+
+document.getElementById("toBackBtn").addEventListener("click", () => moveObject(selectedItem, "back"));
+document.getElementById("toFrontBtn").addEventListener("click", () => moveObject(selectedItem, "front"));
+document.getElementById("deleteObjBtn").addEventListener("click", () => deleteObject(selectedItem));
+
+backEditBtn.addEventListener("click", () => {
+  document.body.classList.toggle("back-edit-mode");
+  const enabled = document.body.classList.contains("back-edit-mode");
+  backEditBtn.classList.toggle("active", enabled);
+  setStatus(enabled ? "Режим задних объектов включён. Теперь можно брать объекты за блоками." : "Режим задних объектов выключен. Теперь можно выбирать окна.");
+});
+
+document.getElementById("undoBtn").addEventListener("click", () => {
+  const prev = historyStack.pop();
+  if (!prev) return;
+  restoreTemplate(JSON.parse(prev));
+});
+
+document.getElementById("saveTemplateBtn").addEventListener("click", () => {
+  const data = getCurrentTemplate();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "pkxd-rules-template.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+templateInput.addEventListener("change", async () => {
+  const file = templateInput.files?.[0];
+  if (!file) return;
+  const data = JSON.parse(await file.text());
+  restoreTemplate(data);
+  templateInput.value = "";
+});
+
+document.getElementById("savePngBtn").addEventListener("click", async () => {
+  document.querySelectorAll(".overlay-item.selected").forEach(el => el.classList.remove("selected"));
+  document.querySelectorAll(".item-menu").forEach(el => el.classList.remove("open"));
+
+  const wasBackMode = document.body.classList.contains("back-edit-mode");
+  document.body.classList.remove("back-edit-mode");
+
+  const canvas = await html2canvas(poster, {
+    scale: 3,
+    useCORS: true,
+    backgroundColor: null,
+    logging: false
+  });
+
+  if (wasBackMode) document.body.classList.add("back-edit-mode");
+  if (selectedItem) selectedItem.classList.add("selected");
+
+  const a = document.createElement("a");
+  a.href = canvas.toDataURL("image/png");
+  a.download = "pkxdportal-rules.png";
+  a.click();
+});
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".overlay-item") && !e.target.closest(".rule-window")) {
+    setSelectedItem(null);
+  }
+});
+
+restoreTemplate(DEFAULT_STATE);
+</script>
+</body>
+</html>
